@@ -1,0 +1,26 @@
+name: cpubeat
+
+targets:
+  cpubeat:
+    type: application
+    platform: macOS
+    deploymentTarget: "27.0"
+    sources:
+      - src
+      - Assets.xcassets
+    settings:
+      base:
+        ARCHS: arm64
+        PRODUCT_NAME: cpubeat
+        PRODUCT_BUNDLE_IDENTIFIER: dev.ilyabylich.cpubeat
+        SWIFT_VERSION: "6.0"
+        SWIFT_OBJC_BRIDGING_HEADER: src/CPUTicks.h
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: NO
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_CFBundleDisplayName: cpubeat
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
