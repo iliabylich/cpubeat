@@ -2,6 +2,12 @@
 
 A simple CPU monitoring widget.
 
+### Installation
+
+1. `brew install --cask iliabylich/cpubeat/cpubeat`
+2. From the latest release
+3. From sources: `git clone` + `just build`
+
 ### License
 
 MIT.
