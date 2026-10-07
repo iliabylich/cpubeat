@@ -4,7 +4,7 @@ targets:
   cpubeat:
     type: application
     platform: macOS
-    deploymentTarget: "27.0"
+    deploymentTarget: "26.0"
     sources:
       - src
       - Assets.xcassets

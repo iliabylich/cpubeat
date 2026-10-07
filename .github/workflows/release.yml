@@ -1,0 +1,71 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: release version in MAJOR.MINOR.PATCH version, no "v" prefix
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "version must be MAJOR.MINOR.PATCH, got: $VERSION"
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+            echo "tag v$VERSION already exists"
+            exit 1
+          fi
+
+  build:
+    needs: validate
+    runs-on: macos-latest
+    steps:
+      - run: ls -l /Applications | grep Xcode
+      - run: sudo xcode-select -switch /Applications/Xcode_26.6.app/Contents/Developer
+      - run: brew install xcodegen
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+      - run: just release-dmg "${{ inputs.version }}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cpubeat_${{ inputs.version }}_arm64.dmg
+          path: cpubeat_${{ inputs.version }}_arm64.dmg
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with: { name: "cpubeat_${{ inputs.version }}_arm64.dmg" }
+
+      - run: ls -l
+
+      - uses: ncipollo/release-action@v1
+        with:
+          artifacts: "*.dmg"
+          tag: v${{ inputs.version }}
+
+      - env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_DEPLOY_GH_TOKEN }}
+        run: |
+          gh workflow run \
+            update.yml \
+            --repo iliabylich/homebrew-cpubeat \
+            --ref master \
+            -f version="${{ inputs.version }}"

@@ -23,7 +23,28 @@ _icon pixels name:
     sips -z {{pixels}} {{pixels}} {{icon_source}} --out {{iconset}}/icon_{{name}}.png >/dev/null
 
 build: gen
-    xcodebuild -project {{project}} -target cpubeat -configuration Release -quiet build
+    @just _build
+
+release-dmg version: clean gen
+    @just _build MARKETING_VERSION={{version}}
+    mkdir -p build/dmg-root
+    cp -R {{app}} build/dmg-root/
+    ln -s /Applications build/dmg-root/Applications
+    hdiutil create \
+        -volname cpubeat \
+        -srcfolder build/dmg-root \
+        -ov \
+        -format UDZO \
+        cpubeat_{{version}}_arm64.dmg
+
+_build *settings:
+    xcodebuild \
+        -project {{project}} \
+        -target cpubeat \
+        -configuration Release \
+        -quiet \
+        {{settings}} \
+        build
 
 run: build stop
     open {{app}}
