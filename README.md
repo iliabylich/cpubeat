@@ -1,6 +1,18 @@
 ### `cpubeat`
 
-A simple CPU monitoring widget.
+A simple CPU monitoring widget for tray. This is NOT a widget for the sidebar panel.
+
+### What it shows
+
+1. Refreshes CPU info every second.
+1. Only performance cores. Efficiency cores are always busy and they don't really drain battery.
+2. Supports light and dark mode.
+3. When idle (i.e. no UI updates) consumes 0.1% CPU.
+
+### Screenshots
+
+![dark](./screenshots/dark.png)
+![light](./screenshots/light.png)
 
 ### Installation
 
