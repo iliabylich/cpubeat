@@ -2,28 +2,27 @@ import AppKit
 
 let app = NSApplication.shared
 
-var sampler: any Sampler =
-  switch ProcessInfo.processInfo.environment["CPUBEAT_SAMPLER"] {
-  case nil: LiveSampler()
-  case "dummy": DummySampler()
-  case "empty": EmptySampler()
-  case let other?: fatalError("unknown CPUBEAT_SAMPLER: \(other)")
-  }
+let options = RunOptions.parse(ProcessInfo.processInfo.environment["CPUBEAT_SYNTHETIC"])
 
 let statusItem = StatusItem()
 let widget = Widget(parent: statusItem.button)
-let state = State()
 
-state.onChange(widget.rerender)
-widget.onAppearanceChange(state.update)
-
-Task {
-  while !Task.isCancelled {
-    try? await Task.sleep(for: .seconds(1), tolerance: .milliseconds(250))
-    let usage = sampler.read()
+let thread = Thread { @Sendable [options] in
+  var sampler = options.sampler()
+  var usage = [CoreUsage](repeating: CoreUsage(0), count: CPU.coreCount)
+  var levels = [CoreUsageLevel](repeating: CoreUsageLevel(0), count: CPU.coreCount)
+  SleepBasedTimer(interval: .seconds(1)).run {
+    sampler.read(into: &usage)
     Logger.log(usage)
-    state.update(usage)
+    let newLevels = usage.lazy.map(CoreUsageLevel.init)
+    guard !newLevels.elementsEqual(levels) else { return }
+    levels = Array(newLevels)
+    DispatchQueue.main.async { [levels] in
+      MainActor.assumeIsolated { widget.update(levels) }
+    }
   }
 }
+thread.qualityOfService = .utility
+thread.start()
 
 app.run()

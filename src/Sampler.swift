@@ -1,23 +1,41 @@
 import Foundation
 
 protocol Sampler {
-  mutating func read() -> [Double]
+  mutating func read(into usage: inout [CoreUsage])
 }
 
-struct DummySampler: Sampler {
-  private var usage = (0..<CPU.coreCount).map { core in
-    Double(core) / Double(CPU.coreCount - 1)
-  }
+enum SyntheticData {
+  case zeroes
+  case rotatingSequence(offset: Int = 0)
 
-  mutating func read() -> [Double] {
-    usage.append(usage.removeFirst())
-    return usage
+  mutating func fill(_ usage: inout [CoreUsage]) {
+    switch self {
+    case .zeroes:
+      for core in usage.indices {
+        usage[core] = CoreUsage(0)
+      }
+    case .rotatingSequence(let offset):
+      let next = (offset + 1) % usage.count
+      for core in usage.indices {
+        usage[core] = CoreUsage(Double((core + next) % usage.count) / Double(usage.count - 1))
+      }
+      self = .rotatingSequence(offset: next)
+    }
   }
 }
 
-struct EmptySampler: Sampler {
-  func read() -> [Double] {
-    Array(repeating: 0, count: CPU.coreCount)
+struct SyntheticSampler: Sampler {
+  private let syscall: (inout [CoreUsage]) -> Void
+  private var data: SyntheticData
+
+  init(syscall: @escaping (inout [CoreUsage]) -> Void, data: SyntheticData) {
+    self.syscall = syscall
+    self.data = data
+  }
+
+  mutating func read(into usage: inout [CoreUsage]) {
+    syscall(&usage)
+    data.fill(&usage)
   }
 }
 
@@ -35,11 +53,11 @@ struct LiveSampler: Sampler {
       self.init(busy: ticks.user &+ ticks.system &+ ticks.nice, idle: ticks.idle)
     }
 
-    var usage: Double {
+    var usage: CoreUsage {
       let busy = Double(busy)
       let total = busy + Double(idle)
-      guard total > 0 else { return 0 }
-      return busy / total
+      guard total > 0 else { return CoreUsage(0) }
+      return CoreUsage(busy / total)
     }
 
     static func - (next: DataPoint, previous: DataPoint) -> DataPoint {
@@ -51,19 +69,24 @@ struct LiveSampler: Sampler {
   private var previous: [DataPoint]
 
   init() {
-    previous = Self.hostProcessorInfo()
+    previous = Self.withHostProcessorInfo { ticks in ticks.map(DataPoint.init) }
     precondition(previous.count == CPU.coreCount, "unexpected core layout")
   }
 
-  mutating func read() -> [Double] {
-    let next = Self.hostProcessorInfo()
-    precondition(next.count == previous.count, "CPU count changed at runtime")
-    let usage = zip(next, previous).map { next, previous in (next - previous).usage }
-    previous = next
-    return usage
+  mutating func read(into usage: inout [CoreUsage]) {
+    Self.withHostProcessorInfo { ticks in
+      precondition(ticks.count == previous.count, "CPU count changed at runtime")
+      for core in ticks.indices {
+        let next = DataPoint(ticks[core])
+        usage[core] = (next - previous[core]).usage
+        previous[core] = next
+      }
+    }
   }
 
-  private static func hostProcessorInfo() -> [DataPoint] {
+  private static func withHostProcessorInfo<Result>(
+    _ body: (UnsafeBufferPointer<CPUTicks>) -> Result
+  ) -> Result {
     var cpuCount: natural_t = 0
     var info: processor_info_array_t?
     var infoCount: mach_msg_type_number_t = 0
@@ -85,9 +108,8 @@ struct LiveSampler: Sampler {
 
     precondition(infoByteCount == cpuTicksByteCount, "unexpected processor info size")
 
-    return UnsafeRawBufferPointer(start: info, count: infoByteCount)
+    let ticks = UnsafeRawBufferPointer(start: info, count: infoByteCount)
       .bindMemory(to: CPUTicks.self)
-      .dropFirst(CPU.efficiencyCoreCount)
-      .map(DataPoint.init)
+    return body(UnsafeBufferPointer(rebasing: ticks.dropFirst(CPU.efficiencyCoreCount)))
   }
 }

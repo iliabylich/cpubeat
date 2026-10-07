@@ -13,7 +13,7 @@ enum Style {
     }
   }
 
-  struct Bar: Equatable {
+  struct Bar {
     let color: CGColor
     let height: CGFloat
   }
@@ -45,8 +45,10 @@ enum Style {
     .init(light: .rgb(0xE60000), dark: .rgb(0xE60000), heightFraction: 1),
   ]
 
-  static func bar(usage: Double, appearance: Appearance) -> Bar {
-    bars[min(bars.count - 1, Int(usage * Double(bars.count)))].resolved(for: appearance)
+  static let barCount = bars.count
+
+  static func bar(level: CoreUsageLevel, appearance: Appearance) -> Bar {
+    bars[level.value].resolved(for: appearance)
   }
 }
 

@@ -52,11 +52,8 @@ run: build stop
 dev: build stop
     {{app}}/Contents/MacOS/cpubeat
 
-dummy: build stop
-    CPUBEAT_SAMPLER=dummy {{app}}/Contents/MacOS/cpubeat
-
-empty: build stop
-    CPUBEAT_SAMPLER=empty {{app}}/Contents/MacOS/cpubeat
+synthetic options="syscall=1,ui=1": build stop
+    CPUBEAT_SYNTHETIC={{options}} {{app}}/Contents/MacOS/cpubeat
 
 stop:
     -pkill -x cpubeat
@@ -69,6 +66,10 @@ clean:
 
 format:
     swift-format format --recursive --in-place src
+
+bench synthetic="syscall=0,ui=0" seconds="10": build
+    cc -O2 -Wall -o build/measure tools/measure.c
+    build/measure {{seconds}} env CPUBEAT_SYNTHETIC={{synthetic}} {{app}}/Contents/MacOS/cpubeat
 
 burn threads="8" seconds="0":
     mkdir -p build
