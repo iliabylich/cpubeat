@@ -1,7 +1,7 @@
 import AppKit
 
 final class Widget: NSView {
-  private var levels = [CoreUsageLevel](repeating: CoreUsageLevel(0), count: CPU.coreCount)
+  private var levels = [CoreUsageLevel](repeating: .zero, count: CPU.coreCount)
 
   init(parent: NSView) {
     super.init(
@@ -23,9 +23,9 @@ final class Widget: NSView {
 
   func update(_ newLevels: [CoreUsageLevel]) {
     precondition(newLevels.count == levels.count, "bar count changed between updates")
-    for index in levels.indices where newLevels[index] != levels[index] {
-      levels[index] = newLevels[index]
-      setNeedsDisplay(Self.barRect(index, height: Layout.maxBarHeight))
+    for core in CPU.cores where newLevels[core] != levels[core] {
+      levels[core] = newLevels[core]
+      setNeedsDisplay(Self.barRect(core, height: Layout.maxBarHeight))
     }
   }
 
@@ -35,13 +35,13 @@ final class Widget: NSView {
 
     context.addPath(Self.borderPath)
     context.setLineWidth(Layout.borderWidth)
-    context.setStrokeColor(Style.borderColor.resolved(for: appearance))
+    context.setStrokeColor(Style.borderColor.resolve(appearance))
     context.strokePath()
 
-    for (index, level) in levels.enumerated() {
-      let bar = Style.bar(level: level, appearance: appearance)
+    for core in CPU.cores {
+      let bar = Style.bar(level: levels[core], appearance: appearance)
       context.setFillColor(bar.color)
-      context.fill(Self.barRect(index, height: bar.height))
+      context.fill(Self.barRect(core, height: bar.height))
     }
   }
 

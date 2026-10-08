@@ -9,8 +9,8 @@ let widget = Widget(parent: statusItem.button)
 
 let thread = Thread { @Sendable [options] in
   var sampler = options.sampler()
-  var usage = [CoreUsage](repeating: CoreUsage(0), count: CPU.coreCount)
-  var levels = [CoreUsageLevel](repeating: CoreUsageLevel(0), count: CPU.coreCount)
+  var usage = [NormalizedCoreUsage](repeating: .zero, count: CPU.coreCount)
+  var levels = [CoreUsageLevel](repeating: .zero, count: CPU.coreCount)
   SleepBasedTimer(interval: .seconds(1)).run {
     sampler.read(into: &usage)
     Logger.log(usage)

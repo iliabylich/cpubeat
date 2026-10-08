@@ -1,12 +1,22 @@
 struct CoreUsageLevel: Equatable {
+  private static let minValue = 0
+  private static let maxValue = Style.barCount - 1
+  private static let validRange = minValue...maxValue
+  static let zero = Self(minValue)
+
   let value: Int
 
   init(_ value: Int) {
-    precondition((0..<Style.barCount).contains(value), "core usage level out of range: \(value)")
+    precondition(Self.validRange.contains(value), "core usage level out of range: \(value)")
     self.value = value
   }
 
-  init(_ usage: CoreUsage) {
-    self.init(min(Style.barCount - 1, Int(usage.value * Double(Style.barCount))))
+  init(_ usage: NormalizedCoreUsage) {
+    self.init(
+      min(
+        Self.maxValue,
+        Self.minValue + Int(usage.value * Double(Self.maxValue - Self.minValue + 1))
+      )
+    )
   }
 }

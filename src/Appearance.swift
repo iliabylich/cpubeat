@@ -5,6 +5,10 @@ enum Appearance {
   case dark
 
   init(_ appearance: NSAppearance) {
-    self = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua ? .dark : .light
+    switch appearance.bestMatch(from: [.aqua, .darkAqua]) {
+    case .aqua, nil: self = .light
+    case .darkAqua: self = .dark
+    default: fatalError("unsupported appearance: \(appearance.name)")
+    }
   }
 }

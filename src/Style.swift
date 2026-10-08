@@ -5,7 +5,7 @@ enum Style {
     let light: CGColor
     let dark: CGColor
 
-    func resolved(for appearance: Appearance) -> CGColor {
+    func resolve(_ appearance: Appearance) -> CGColor {
       switch appearance {
       case .light: light
       case .dark: dark
@@ -27,8 +27,8 @@ enum Style {
       height = (heightFraction * Layout.maxBarHeight).rounded()
     }
 
-    func resolved(for appearance: Appearance) -> Bar {
-      Bar(color: color.resolved(for: appearance), height: height)
+    func resolve(_ appearance: Appearance) -> Bar {
+      Bar(color: color.resolve(appearance), height: height)
     }
   }
 
@@ -48,7 +48,7 @@ enum Style {
   static let barCount = bars.count
 
   static func bar(level: CoreUsageLevel, appearance: Appearance) -> Bar {
-    bars[level.value].resolved(for: appearance)
+    bars[level.value].resolve(appearance)
   }
 }
 

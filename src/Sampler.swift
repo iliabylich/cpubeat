@@ -1,23 +1,24 @@
 import Foundation
 
 protocol Sampler {
-  mutating func read(into usage: inout [CoreUsage])
+  mutating func read(into usage: inout [NormalizedCoreUsage])
 }
 
 enum SyntheticData {
   case zeroes
   case rotatingSequence(offset: Int = 0)
 
-  mutating func fill(_ usage: inout [CoreUsage]) {
+  mutating func fill(_ usage: inout [NormalizedCoreUsage]) {
     switch self {
     case .zeroes:
-      for core in usage.indices {
-        usage[core] = CoreUsage(0)
+      for core in CPU.cores {
+        usage[core] = .zero
       }
     case .rotatingSequence(let offset):
-      let next = (offset + 1) % usage.count
-      for core in usage.indices {
-        usage[core] = CoreUsage(Double((core + next) % usage.count) / Double(usage.count - 1))
+      let next = (offset + 1) % CPU.coreCount
+      for core in CPU.cores {
+        usage[core] = NormalizedCoreUsage(
+          Double((core + next) % CPU.coreCount) / Double(CPU.coreCount - 1))
       }
       self = .rotatingSequence(offset: next)
     }
@@ -25,15 +26,15 @@ enum SyntheticData {
 }
 
 struct SyntheticSampler: Sampler {
-  private let syscall: (inout [CoreUsage]) -> Void
+  private let syscall: (inout [NormalizedCoreUsage]) -> Void
   private var data: SyntheticData
 
-  init(syscall: @escaping (inout [CoreUsage]) -> Void, data: SyntheticData) {
+  init(syscall: @escaping (inout [NormalizedCoreUsage]) -> Void, data: SyntheticData) {
     self.syscall = syscall
     self.data = data
   }
 
-  mutating func read(into usage: inout [CoreUsage]) {
+  mutating func read(into usage: inout [NormalizedCoreUsage]) {
     syscall(&usage)
     data.fill(&usage)
   }
@@ -53,11 +54,11 @@ struct LiveSampler: Sampler {
       self.init(busy: ticks.user &+ ticks.system &+ ticks.nice, idle: ticks.idle)
     }
 
-    var usage: CoreUsage {
+    var usage: NormalizedCoreUsage {
       let busy = Double(busy)
       let total = busy + Double(idle)
-      guard total > 0 else { return CoreUsage(0) }
-      return CoreUsage(busy / total)
+      guard total > 0 else { return .zero }
+      return NormalizedCoreUsage(busy / total)
     }
 
     static func - (next: DataPoint, previous: DataPoint) -> DataPoint {
@@ -72,10 +73,10 @@ struct LiveSampler: Sampler {
     precondition(previous.count == CPU.coreCount, "unexpected core layout")
   }
 
-  mutating func read(into usage: inout [CoreUsage]) {
+  mutating func read(into usage: inout [NormalizedCoreUsage]) {
     CPU.withHostProcessorInfo { ticks in
-      precondition(ticks.count == previous.count, "CPU count changed at runtime")
-      for core in ticks.indices {
+      precondition(ticks.count == CPU.coreCount, "CPU count changed at runtime")
+      for core in CPU.cores {
         let next = DataPoint(ticks[core])
         usage[core] = (next - previous[core]).usage
         previous[core] = next

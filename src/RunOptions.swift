@@ -41,7 +41,7 @@ enum RunOptions {
     }
   }
 
-  private static func liveSyscall() -> (inout [CoreUsage]) -> Void {
+  private static func liveSyscall() -> (inout [NormalizedCoreUsage]) -> Void {
     var live = LiveSampler()
     return { live.read(into: &$0) }
   }

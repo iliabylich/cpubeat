@@ -4,11 +4,12 @@ enum CPU {
   static let efficiencyCoreCount = sysctlInt("hw.perflevel1.logicalcpu")
   static let performanceCoreCount = sysctlInt("hw.perflevel0.logicalcpu")
   static let coreCount = performanceCoreCount
+  static let cores = 0..<coreCount
   private static let host = mach_host_self()
 
-  static func withHostProcessorInfo<Result>(
-    _ body: (UnsafeBufferPointer<CPUTicks>) -> Result
-  ) -> Result {
+  static func withHostProcessorInfo<Result>(_ body: (UnsafeBufferPointer<CPUTicks>) -> Result)
+    -> Result
+  {
     var cpuCount: natural_t = 0
     var info: processor_info_array_t?
     var infoCount: mach_msg_type_number_t = 0
@@ -24,8 +25,10 @@ enum CPU {
 
     defer {
       vm_deallocate(
-        mach_task_self_, vm_address_t(bitPattern: info),
-        vm_size_t(infoByteCount))
+        mach_task_self_,
+        vm_address_t(bitPattern: info),
+        vm_size_t(infoByteCount)
+      )
     }
 
     precondition(infoByteCount == cpuTicksByteCount, "unexpected processor info size")
