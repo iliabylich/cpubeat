@@ -65,16 +65,15 @@ struct LiveSampler: Sampler {
     }
   }
 
-  private static let host = mach_host_self()
   private var previous: [DataPoint]
 
   init() {
-    previous = Self.withHostProcessorInfo { ticks in ticks.map(DataPoint.init) }
+    previous = CPU.withHostProcessorInfo { ticks in ticks.map(DataPoint.init) }
     precondition(previous.count == CPU.coreCount, "unexpected core layout")
   }
 
   mutating func read(into usage: inout [CoreUsage]) {
-    Self.withHostProcessorInfo { ticks in
+    CPU.withHostProcessorInfo { ticks in
       precondition(ticks.count == previous.count, "CPU count changed at runtime")
       for core in ticks.indices {
         let next = DataPoint(ticks[core])
@@ -82,34 +81,5 @@ struct LiveSampler: Sampler {
         previous[core] = next
       }
     }
-  }
-
-  private static func withHostProcessorInfo<Result>(
-    _ body: (UnsafeBufferPointer<CPUTicks>) -> Result
-  ) -> Result {
-    var cpuCount: natural_t = 0
-    var info: processor_info_array_t?
-    var infoCount: mach_msg_type_number_t = 0
-
-    let result = host_processor_info(
-      host, PROCESSOR_CPU_LOAD_INFO, &cpuCount, &info, &infoCount)
-    guard result == KERN_SUCCESS, let info else {
-      fatalError("host_processor_info failed: \(result)")
-    }
-
-    let infoByteCount = Int(infoCount) * MemoryLayout<integer_t>.stride
-    let cpuTicksByteCount = Int(cpuCount) * MemoryLayout<CPUTicks>.stride
-
-    defer {
-      vm_deallocate(
-        mach_task_self_, vm_address_t(bitPattern: info),
-        vm_size_t(infoByteCount))
-    }
-
-    precondition(infoByteCount == cpuTicksByteCount, "unexpected processor info size")
-
-    let ticks = UnsafeRawBufferPointer(start: info, count: infoByteCount)
-      .bindMemory(to: CPUTicks.self)
-    return body(UnsafeBufferPointer(rebasing: ticks.dropFirst(CPU.efficiencyCoreCount)))
   }
 }
