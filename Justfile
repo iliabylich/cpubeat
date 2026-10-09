@@ -22,10 +22,10 @@ icon:
 _icon pixels name:
     sips -z {{pixels}} {{pixels}} {{icon_source}} --out {{iconset}}/icon_{{name}}.png >/dev/null
 
-build: gen
+build: gen cargo
     @just _build
 
-release-dmg version: clean gen
+release-dmg version: clean gen cargo
     @just _build MARKETING_VERSION={{version}}
     mkdir -p build/dmg-root
     cp -R {{app}} build/dmg-root/
@@ -65,7 +65,8 @@ clean:
     rm -rf build {{project}}
 
 format:
-    swift-format format --recursive --in-place src
+    swift-format format --recursive --in-place swift-src
+    cargo fmt
 
 bench synthetic="syscall=0,ui=0" seconds="10": build
     cc -O2 -Wall -o build/measure tools/measure.c
@@ -75,3 +76,9 @@ burn threads="8" seconds="0":
     mkdir -p build
     cc -O2 -Wall -o build/burn tools/burn.c
     build/burn {{threads}} {{seconds}}
+
+cargo:
+    cargo build --release
+
+cbindgen:
+    cbindgen --output swift-src/BridgingHeader.h

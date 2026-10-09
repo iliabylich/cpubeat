@@ -1,0 +1,7 @@
+language = "C"
+pragma_once = false
+usize_is_size_t = true
+style = "type"
+
+[enum]
+rename_variants = "QualifiedScreamingSnakeCase"

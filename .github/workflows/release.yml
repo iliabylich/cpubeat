@@ -38,9 +38,11 @@ jobs:
     steps:
       - run: ls -l /Applications | grep Xcode
       - run: sudo xcode-select -switch /Applications/Xcode_26.6.app/Contents/Developer
-      - run: brew install xcodegen
+      - run: brew install xcodegen cbindgen
+      - uses: dtolnay/rust-toolchain@stable
       - uses: actions/checkout@v7
       - uses: extractions/setup-just@v4
+      - run: just cbindgen
       - run: just release-dmg "${{ inputs.version }}"
       - uses: actions/upload-artifact@v7
         with:

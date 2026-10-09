@@ -32,7 +32,7 @@ enum Style {
     }
   }
 
-  static let borderColor = AdaptiveColor(light: .rgb(0x404040), dark: .rgb(0xFFFFFF))
+  static let borderColor: AdaptiveColor = AdaptiveColor(light: .rgb(0x404040), dark: .rgb(0xFFFFFF))
 
   private static let bars: [8 of BarTemplate] = [
     .init(light: .rgb(0x404040), dark: .rgb(0xFFFFFF), heightFraction: 0.125),
@@ -45,10 +45,12 @@ enum Style {
     .init(light: .rgb(0xE60000), dark: .rgb(0xE60000), heightFraction: 1),
   ]
 
-  static let barCount = bars.count
+  static func level(_ usage: Double) -> UInt8 {
+    UInt8(min(bars.count - 1, Int(usage * Double(bars.count))))
+  }
 
-  static func bar(level: CoreUsageLevel, appearance: Appearance) -> Bar {
-    bars[level.value].resolve(appearance)
+  static func bar(level: UInt8, appearance: Appearance) -> Bar {
+    bars[Int(level)].resolve(appearance)
   }
 }
 

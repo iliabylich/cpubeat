@@ -1,7 +1,7 @@
 import AppKit
 
 final class Widget: NSView {
-  private var levels = [CoreUsageLevel](repeating: .zero, count: CPU.coreCount)
+  private var levels = [UInt8](repeating: 0, count: FFI.coreCount)
 
   init(parent: NSView) {
     super.init(
@@ -21,9 +21,9 @@ final class Widget: NSView {
     fatalError("init(coder:) is not supported")
   }
 
-  func update(_ newLevels: [CoreUsageLevel]) {
+  func update(_ newLevels: [UInt8]) {
     precondition(newLevels.count == levels.count, "bar count changed between updates")
-    for core in CPU.cores where newLevels[core] != levels[core] {
+    for core in 0..<FFI.coreCount where newLevels[core] != levels[core] {
       levels[core] = newLevels[core]
       setNeedsDisplay(Self.barRect(core, height: Layout.maxBarHeight))
     }
@@ -38,7 +38,7 @@ final class Widget: NSView {
     context.setStrokeColor(Style.borderColor.resolve(appearance))
     context.strokePath()
 
-    for core in CPU.cores {
+    for core in 0..<FFI.coreCount {
       let bar = Style.bar(level: levels[core], appearance: appearance)
       context.setFillColor(bar.color)
       context.fill(Self.barRect(core, height: bar.height))
@@ -56,9 +56,9 @@ final class Widget: NSView {
       transform: nil)
   }()
 
-  private static func barRect(_ index: Int, height: CGFloat) -> CGRect {
+  private static func barRect(_ core: Int, height: CGFloat) -> CGRect {
     CGRect(
-      x: Layout.inset + CGFloat(index) * (Layout.barWidth + Layout.barGap),
+      x: Layout.inset + CGFloat(core) * (Layout.barWidth + Layout.barGap),
       y: Layout.inset,
       width: Layout.barWidth,
       height: height)

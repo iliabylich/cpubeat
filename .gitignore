@@ -2,3 +2,5 @@ build/
 *.xcodeproj
 *.dmg
 *-baseline.txt
+/target
+Cargo.lock

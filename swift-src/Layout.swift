@@ -7,10 +7,10 @@ enum Layout {
   static let cornerRadius: CGFloat = 3
   static let padding: CGFloat = 4
   static let inset: CGFloat = borderWidth + padding
-  static let height = NSStatusBar.system.thickness
-  static let maxBarHeight = height - 2 * inset
-  static let width =
-    CGFloat(CPU.coreCount) * barWidth
-    + CGFloat(CPU.coreCount - 1) * barGap
+  static let height: CGFloat = NSStatusBar.system.thickness
+  static let maxBarHeight: CGFloat = height - 2 * inset
+  static let width: CGFloat =
+    CGFloat(FFI.coreCount) * barWidth
+    + CGFloat(FFI.coreCount - 1) * barGap
     + 2 * inset
 }
