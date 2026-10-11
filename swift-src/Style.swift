@@ -34,19 +34,16 @@ enum Style {
 
   static let borderColor: AdaptiveColor = AdaptiveColor(light: .rgb(0x404040), dark: .rgb(0xFFFFFF))
 
-  private static let bars: [8 of BarTemplate] = [
+  private static let bars: [5 of BarTemplate] = [
     .init(light: .rgb(0x404040), dark: .rgb(0xFFFFFF), heightFraction: 0.125),
-    .init(light: .rgb(0x583737), dark: .rgb(0xFFD5D5), heightFraction: 0.25),
-    .init(light: .rgb(0x6F2E2E), dark: .rgb(0xFFAAAA), heightFraction: 0.375),
-    .init(light: .rgb(0x872525), dark: .rgb(0xFF8080), heightFraction: 0.5),
-    .init(light: .rgb(0x9F1B1B), dark: .rgb(0xFF5555), heightFraction: 0.625),
-    .init(light: .rgb(0xB71212), dark: .rgb(0xFF2B2B), heightFraction: 0.75),
-    .init(light: .rgb(0xCE0909), dark: .rgb(0xFF0000), heightFraction: 0.875),
+    .init(light: .rgb(0x6A3030), dark: .rgb(0xFFAAAA), heightFraction: 0.25),
+    .init(light: .rgb(0x932020), dark: .rgb(0xFF5555), heightFraction: 0.5),
+    .init(light: .rgb(0xBC1010), dark: .rgb(0xFF0000), heightFraction: 0.75),
     .init(light: .rgb(0xE60000), dark: .rgb(0xE60000), heightFraction: 1),
   ]
 
   static func level(_ usage: Double) -> UInt8 {
-    UInt8(min(bars.count - 1, Int(usage * Double(bars.count))))
+    UInt8(min(bars.count - 1, Int((usage * Double(bars.count - 1)).rounded())))
   }
 
   static func bar(level: UInt8, appearance: Appearance) -> Bar {
