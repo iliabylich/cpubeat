@@ -8,8 +8,8 @@ A simple CPU monitoring widget for tray. This is NOT a widget for the sidebar pa
 2. Only performance cores. Efficiency cores are always busy and they don't really drain battery.
 3. Supports light and dark mode.
 4. When idle (i.e. CPU isn't busy and UI of the widget doesn't update) consumes ~0.02% of CPU.
-5. When load of every core changes every second (i.e. heavily but also randomly loaded workflow) it consumes ~0.4% of CPU.
-6. Each secondary workspace shows a copy of a widget that has to be "copied" from the main workspace, with 6 total workspaces CPU usage varies from 0.4% (idle) to 1.2% (full re-render every second).
+5. When load of every core changes every second (i.e. heavily but also randomly loaded workflow) it consumes ~0.3% of CPU.
+6. Each secondary workspace shows a copy of a widget that has to be "copied" from the main workspace, with 6 total workspaces CPU usage varies from 0.04% (idle) to 1.2% (full re-render every second).
 
 ### Screenshots
 
