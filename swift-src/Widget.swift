@@ -23,10 +23,12 @@ final class Widget: NSView {
 
   func update(_ newLevels: [UInt8]) {
     precondition(newLevels.count == levels.count, "bar count changed between updates")
+    var dirty = CGRect.null
     for core in 0..<FFI.coreCount where newLevels[core] != levels[core] {
       levels[core] = newLevels[core]
-      setNeedsDisplay(Self.barRect(core, height: Layout.maxBarHeight))
+      dirty = dirty.union(Self.barRect(core, height: Layout.maxBarHeight))
     }
+    setNeedsDisplay(dirty)
   }
 
   override func draw(_ dirtyRect: NSRect) {
