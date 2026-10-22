@@ -1,0 +1,21 @@
+[vars]
+icon_source = "{{vars.root}}/icon_512x512.png"
+iconset = "AppIcon.appiconset"
+
+[tasks.generate]
+run = '''
+    for size in 16 32 128 256 512; do
+        sips \
+            -z $size $size \
+            {{vars.icon_source}} \
+            --out {{vars.iconset}}/icon_${size}x${size}.png \
+            >/dev/null
+        if [ $size -lt 512 ]; then
+            sips \
+                -z $((size * 2)) $((size * 2)) \
+                {{vars.icon_source}} \
+                --out {{vars.iconset}}/icon_${size}x${size}@2x.png \
+                >/dev/null
+        fi
+    done
+'''

@@ -1,0 +1,65 @@
+monorepo_root = true
+
+[monorepo]
+config_roots = ["icons.xcassets", "src", "swift-src", "tools"]
+
+[monorepo.path_aliases]
+rust = "src"
+swift = "swift-src"
+
+[task_config]
+shell = "bash -euo pipefail -c"
+
+[settings]
+cargo.binstall_only = true
+cargo.binstall_quickinstall = true
+
+[tools]
+"aqua:cargo-bins/cargo-binstall" = "latest"
+"cargo:cbindgen" = "latest"
+"aqua:yonaskolb/XcodeGen" = "latest"
+
+[vars]
+root = "{{config_root}}"
+project = "cpubeat.xcodeproj"
+app_release = "build/Release/cpubeat.app"
+
+[tasks.dev]
+depends = ["build:debug"]
+run = "build/Debug/cpubeat.app/Contents/MacOS/cpubeat"
+
+[tasks."release:dmg"]
+usage = 'flag "--version <version>" required=#true'
+run = [
+  { task = "build:release --version {{usage.version}}" },
+  '''
+    rm -rf build/dmg-root
+    mkdir -p build/dmg-root
+    cp -R {{vars.app_release}} build/dmg-root/
+    ln -s /Applications build/dmg-root/Applications
+    hdiutil create -volname cpubeat -srcfolder build/dmg-root -ov -format UDZO cpubeat_{{usage.version}}_arm64.dmg
+  ''',
+]
+
+[tasks.synthetic]
+depends = ["build:release --version 0.0.1"]
+usage = 'flag "--options <options>" default="syscall=1,ui=1"'
+run = "CPUBEAT_SYNTHETIC={{usage.options}} {{vars.app_release}}/Contents/MacOS/cpubeat"
+
+[tasks.clean]
+depends = ["//rust:clean", "//swift:clean"]
+
+[tasks.format]
+depends = ["//rust:format"]
+
+[tasks."build:debug"]
+hide = true
+run = [{ task = "//rust:build:debug" }, { task = "//swift:build:debug" }]
+
+[tasks."build:release"]
+hide = true
+usage = 'flag "--version <version>" required=#true'
+run = [
+  { task = "//rust:build:release" },
+  { task = "//swift:build:release --version {{usage.version}}" },
+]

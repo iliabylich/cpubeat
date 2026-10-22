@@ -1,0 +1,34 @@
+[tasks."build:debug"]
+hide = true
+depends = ["xcodegen"]
+run = [{ task = "build --configuration Debug --version 0.0.1" }]
+
+[tasks."build:release"]
+hide = true
+usage = 'flag "--version <version>" required=#true'
+depends = ["xcodegen"]
+run = [{ task = "build --configuration Release --version {{usage.version}}" }]
+
+[tasks.build]
+hide = true
+usage = '''
+    flag "--configuration <configuration>" required=#true
+    flag "--version <version>" required=#true
+'''
+run = '''
+    xcodebuild \
+        -project {{vars.root}}/{{vars.project}} \
+        -target cpubeat \
+        -configuration {{usage.configuration}} \
+        -quiet \
+        build \
+        MARKETING_VERSION={{usage.version}}
+'''
+
+[tasks.clean]
+hide = true
+run = "rm -rf {{vars.root}}/build {{vars.root}}/{{vars.project}}"
+
+[tasks.xcodegen]
+hide = true
+run = "xcodegen generate --use-cache --spec {{vars.root}}/project.yml"

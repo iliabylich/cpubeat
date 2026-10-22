@@ -1,0 +1,28 @@
+[vars]
+build_dir = "{{vars.root}}/build"
+
+[tasks.burn]
+usage = '''
+    flag "--threads <threads>" default="8"
+    flag "--seconds <seconds>" default="0"
+'''
+run = '''
+    mkdir -p {{vars.build_dir}}
+    cc -O2 -Wall -o {{vars.build_dir}}/burn burn.c
+    {{vars.build_dir}}/burn {{usage.threads}} {{usage.seconds}}
+'''
+
+[tasks.bench]
+depends = ["//:build:release --version 0.0.1"]
+usage = '''
+    flag "--synthetic <synthetic>" default="syscall=0,ui=0"
+    flag "--seconds <seconds>" default="10"
+'''
+run = '''
+    cc -O2 -Wall -o {{vars.build_dir}}/measure measure.c
+    {{vars.build_dir}}/measure \
+        {{usage.seconds}} \
+        env \
+        CPUBEAT_SYNTHETIC={{usage.synthetic}} \
+        {{vars.root}}/{{vars.app_release}}/Contents/MacOS/cpubeat
+'''

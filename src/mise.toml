@@ -1,0 +1,27 @@
+[tasks."build:debug"]
+hide = true
+depends = ["cargo:debug", "cbindgen"]
+
+[tasks."build:release"]
+hide = true
+depends = ["cargo:release", "cbindgen"]
+
+[tasks."cargo:debug"]
+hide = true
+run = "cargo build"
+
+[tasks."cargo:release"]
+hide = true
+run = "cargo build --release"
+
+[tasks.cbindgen]
+hide = true
+run = "cbindgen --output {{vars.root}}/swift-src/BridgingHeader.h {{vars.root}}"
+
+[tasks.format]
+hide = true
+run = "cargo fmt"
+
+[tasks.clean]
+hide = true
+run = "cargo clean"

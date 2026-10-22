@@ -20,7 +20,7 @@ A simple CPU monitoring widget for tray. This is NOT a widget for the sidebar pa
 
 1. `brew install --cask iliabylich/cpubeat/cpubeat`
 2. From the latest release
-3. From sources: `git clone` + `just build`
+3. From sources: `git clone` + `mise //:release:dmg --version 0.0.1`
 
 ### Benchmarks
 
@@ -40,9 +40,9 @@ In other words:
 + `syscall=0,ui=1` means "just update full UI with some data"
 + `syscall=1,ui=1` means "fetch the data, but do a full render using fake data to update all the UI". This is literally the worst thing perf-wise that can happen to this app.
 
-The default value for both flags is `"0"`. `just synthetic "syscall=0,ui=1"` is a shortcut for running the app in a specific mode.
+The default value for both flags is `"0"`. `mise //:synthetic --options "syscall=0,ui=1"` is a shortcut for running the app in a specific mode.
 
-To run a benchmark do `just bench "syscall=0,ui=1" 10` (no syscall, full UI update, record for 10 seconds).
+To run a benchmark do `mise //tools:bench --synthetic "syscall=0,ui=1" --seconds 10` (no syscall, full UI update, record for 10 seconds).
 
 ### License
 
