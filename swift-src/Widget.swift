@@ -2,9 +2,13 @@ import AppKit
 
 final class Widget: NSView {
   private var levels = [UInt8](repeating: 0, count: FFI.coreCount)
-  private var borderCache = BorderCache()
+  private var occlusionObserver: Task<Void, Never>?
 
-  init(parent: NSView) {
+  private var isVisible: Bool {
+    window?.occlusionState.contains(.visible) ?? false
+  }
+
+  init() {
     super.init(
       frame: NSRect(
         x: 0,
@@ -14,8 +18,6 @@ final class Widget: NSView {
       )
     )
     wantsLayer = true
-
-    parent.addSubview(self)
   }
 
   required init?(coder: NSCoder) {
@@ -29,18 +31,28 @@ final class Widget: NSView {
       levels[core] = newLevels[core]
       dirty = dirty.union(Self.barRect(core, height: Layout.maxBarHeight))
     }
-    setNeedsDisplay(dirty)
+    if isVisible {
+      setNeedsDisplay(dirty)
+    }
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    occlusionObserver?.cancel()
+    guard let window else { return }
+    occlusionObserver = Task { [weak self] in
+      for await _ in NotificationCenter.default.notifications(
+        named: NSWindow.didChangeOcclusionStateNotification, object: window)
+      {
+        guard let self, isVisible else { continue }
+        needsDisplay = true
+      }
+    }
   }
 
   override func draw(_ dirtyRect: NSRect) {
     guard let context = NSGraphicsContext.current?.cgContext else { return }
     let appearance = Appearance(NSAppearance.currentDrawing())
-    let scale = context.userSpaceToDeviceSpaceTransform.a
-
-    let border = borderCache.fetch(appearance: appearance, scale: scale) {
-      Self.renderBorder(appearance: appearance, scale: scale)
-    }
-    context.draw(border, in: bounds)
 
     for core in 0..<FFI.coreCount {
       let bar = Style.bar(level: levels[core], appearance: appearance)
@@ -48,38 +60,6 @@ final class Widget: NSView {
       context.fill(Self.barRect(core, height: bar.height))
     }
   }
-
-  private static func renderBorder(appearance: Appearance, scale: CGFloat) -> CGImage {
-    guard
-      let context = CGContext(
-        data: nil,
-        width: Int((Layout.width * scale).rounded()),
-        height: Int((Layout.height * scale).rounded()),
-        bitsPerComponent: 8,
-        bytesPerRow: 0,
-        space: CGColorSpace(name: CGColorSpace.sRGB)!,
-        bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue
-          | CGBitmapInfo.byteOrder32Little.rawValue)
-    else { fatalError("failed to create border bitmap context") }
-    context.scaleBy(x: scale, y: scale)
-    context.addPath(borderPath)
-    context.setLineWidth(Layout.borderWidth)
-    context.setStrokeColor(Style.borderColor.resolve(appearance))
-    context.strokePath()
-    guard let image = context.makeImage() else { fatalError("failed to render border image") }
-    return image
-  }
-
-  private static let borderPath: CGPath = {
-    let borderInset = Layout.borderWidth / 2
-    let borderRadius = Layout.cornerRadius - borderInset
-    return CGPath(
-      roundedRect: CGRect(x: 0, y: 0, width: Layout.width, height: Layout.height)
-        .insetBy(dx: borderInset, dy: borderInset),
-      cornerWidth: borderRadius,
-      cornerHeight: borderRadius,
-      transform: nil)
-  }()
 
   private static func barRect(_ core: Int, height: CGFloat) -> CGRect {
     CGRect(

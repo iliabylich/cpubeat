@@ -1,6 +1,11 @@
 ### `cpubeat`
 
-A simple CPU monitoring widget for tray. This is NOT a widget for the sidebar panel.
+A simple CPU monitoring widget that is implemented as a floating window. This is NOT a widget for the sidebar panel.
+
+It shows 1 copy of a widget on:
+
++ the external (if available) or the main monitor
++ the first non-single-window-fullscreen workspace
 
 ### What it shows
 
@@ -8,8 +13,9 @@ A simple CPU monitoring widget for tray. This is NOT a widget for the sidebar pa
 2. Only performance cores. Efficiency cores are always busy and they don't really drain battery.
 3. Supports light and dark mode.
 4. When idle (i.e. CPU isn't busy and UI of the widget doesn't update) consumes ~0.02% of CPU.
-5. When load of every core changes every second (i.e. heavily but also randomly loaded workflow) it consumes ~0.3% of CPU.
-6. Each secondary workspace shows a copy of a widget that has to be "copied" from the main workspace, with 6 total workspaces CPU usage varies from 0.04% (idle) to 1.2% (full re-render every second).
+5. When load of every core changes every second (i.e. heavily but also randomly loaded workflow) it consumes ~0.2% of CPU.
+6. Off-screen rendering is free, the app doesn't update the UI if it's not visible.
+7. Plugging/unplugging external monitor makes the app "move" to the best spot (see above)
 
 ### Screenshots
 
@@ -37,7 +43,7 @@ In other words:
 
 + `syscall=0,ui=0` means "do no work, only run the timer"
 + `syscall=1,ui=0` means "fetch the data, but don't bother updating UI"
-+ `syscall=0,ui=1` means "just update full UI with some data"
++ `syscall=0,ui=1` means "just update the UI with some fake data"
 + `syscall=1,ui=1` means "fetch the data, but do a full render using fake data to update all the UI". This is literally the worst thing perf-wise that can happen to this app.
 
 The default value for both flags is `"0"`. `mise //:synthetic --options "syscall=0,ui=1"` is a shortcut for running the app in a specific mode.

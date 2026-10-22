@@ -1,9 +1,11 @@
 import AppKit
 
 let app = NSApplication.shared
+app.setActivationPolicy(.prohibited)
 
-let statusItem = StatusItem()
-let widget = Widget(parent: statusItem.button)
+let widget = Widget()
+let floatingWindow = FloatingWindow(content: widget)
+floatingWindow.refresh()
 
 let thread = Thread {
   let cpubeat = FFI.CpuBeat()

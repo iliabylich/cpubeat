@@ -32,8 +32,6 @@ enum Style {
     }
   }
 
-  static let borderColor: AdaptiveColor = AdaptiveColor(light: .rgb(0x404040), dark: .rgb(0xFFFFFF))
-
   private static let bars: [5 of BarTemplate] = [
     .init(light: .rgb(0x404040), dark: .rgb(0xFFFFFF), heightFraction: 0.125),
     .init(light: .rgb(0x6A3030), dark: .rgb(0xFFAAAA), heightFraction: 0.25),
