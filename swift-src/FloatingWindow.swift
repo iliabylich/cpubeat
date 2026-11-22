@@ -57,34 +57,51 @@ final class FloatingWindow {
   }
 
   private static func makeWindow(contentView: NSView) -> NSWindow {
-    let window = NSWindow(
-      contentRect: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height),
-      styleMask: .borderless,
+    let window = UnconstrainedWindow(
+      contentRect: NSRect(origin: .zero, size: windowSize),
+      styleMask: [.titled, .fullSizeContentView],
       backing: .buffered,
       defer: false
     )
+    window.titlebarAppearsTransparent = true
+    window.titleVisibility = .hidden
+    for button in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] {
+      window.standardWindowButton(button)?.isHidden = true
+    }
     window.level = .floating
     window.collectionBehavior = [.ignoresCycle]
     window.isMovable = false
     window.isOpaque = false
     window.backgroundColor = .clear
-    window.hasShadow = true
+    window.hasShadow = false
     window.contentView = contentView
     return window
   }
 
+  private static let windowPadding: CGFloat = 10
+
+  private static let windowSize = NSSize(
+    width: Layout.width + 2 * windowPadding,
+    height: Layout.height + 2 * windowPadding
+  )
+
   private func pin(to screen: Screen) {
     let area = screen.nsScreen.visibleFrame
-    window.setFrameTopLeftPoint(NSPoint(x: area.minX, y: area.maxY))
+    window.setFrameTopLeftPoint(
+      NSPoint(x: area.minX - Self.windowPadding, y: area.maxY + Self.windowPadding))
   }
 
   private static func makeContentView(_ content: NSView) -> NSView {
-    let view = NSGlassEffectView(frame: NSRect(x: 0, y: 0, width: Layout.width, height: Layout.height))
-    view.style = .regular
-    view.cornerRadius = Layout.cornerRadius
-    view.contentView = content
-    view.menu = makeMenu()
-    return view
+    let glass = NSGlassEffectView(
+      frame: NSRect(x: windowPadding, y: windowPadding, width: Layout.width, height: Layout.height))
+    glass.style = .regular
+    glass.cornerRadius = Layout.cornerRadius
+    glass.contentView = content
+    glass.menu = makeMenu()
+
+    let container = NSView(frame: NSRect(origin: .zero, size: windowSize))
+    container.addSubview(glass)
+    return container
   }
 
   private static func makeMenu() -> NSMenu {
@@ -97,5 +114,11 @@ final class FloatingWindow {
     quit.target = NSApplication.shared
     menu.addItem(quit)
     return menu
+  }
+}
+
+private final class UnconstrainedWindow: NSWindow {
+  override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
+    frameRect
   }
 }
